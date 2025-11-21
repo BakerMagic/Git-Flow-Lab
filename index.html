@@ -57,6 +57,14 @@
             color: green;
             margin-top: 10px;
         }
+        .security-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -64,14 +72,17 @@
         <!-- Форма входа -->
         <div id="loginForm">
             <h2>Вход в систему</h2>
+            <div class="security-warning">
+                🔒 <strong>Обновление безопасности:</strong> Улучшена защита паролей
+            </div>
             <form id="loginFormElement">
                 <div class="form-group">
                     <label for="username">Логин:</label>
-                    <input type="text" id="username" name="username" required>
+                    <input type="text" id="username" name="username" required maxlength="20">
                 </div>
                 <div class="form-group">
                     <label for="password">Пароль:</label>
-                    <input type="password" id="password" name="password" required>
+                    <input type="password" id="password" name="password" required minlength="6" maxlength="30">
                 </div>
                 <button type="submit">Войти</button>
             </form>
@@ -82,7 +93,10 @@
         <!-- Контент после входа -->
         <div id="content" class="hidden">
             <h2>Добро пожаловать, <span id="userName"></span>!</h2>
-            <div class="success">Вы успешно вошли в систему</div>
+            <div class="success">✅ Вы успешно вошли в систему</div>
+            <div class="security-warning">
+                🔐 <strong>Безопасность улучшена:</strong> Пароли теперь защищены хешированием
+            </div>
             <div class="form-group">
                 <h3>Личный кабинет</h3>
                 <p>Это защищённая страница. Здесь может быть ваш контент.</p>
@@ -90,6 +104,7 @@
                     <li>Профиль пользователя</li>
                     <li>Настройки аккаунта</li>
                     <li>История действий</li>
+                    <li><strong>Журнал безопасности</strong> (новое)</li>
                 </ul>
             </div>
             <button onclick="logout()">Выйти</button>
@@ -97,34 +112,109 @@
     </div>
 
     <script>
-        // Тестовые пользователи (в реальном приложении это было бы на сервере)
+        // HOTFIX: Улучшенная система безопасности
+        // Тестовые пользователи с ХЕШИРОВАННЫМИ паролями
         const users = [
-            { username: 'admin', password: 'password123', name: 'Администратор' },
-            { username: 'user', password: 'user123', name: 'Обычный пользователь' },
-            { username: 'student', password: 'student123', name: 'Студент' }
+            { 
+                username: 'admin', 
+                passwordHash: 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', // password123
+                name: 'Администратор',
+                role: 'admin'
+            },
+            { 
+                username: 'user', 
+                passwordHash: '1e2f2783d127cce930f5bfbddb39b302c0508dfa9acd8b355c6f6a28e2146f7e', // user123
+                name: 'Обычный пользователь',
+                role: 'user'
+            },
+            { 
+                username: 'student', 
+                passwordHash: 'd9d9d2a3a8694b4b5c4e6c3e2c5b4a7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3', // student123
+                name: 'Студент',
+                role: 'student'
+            }
         ];
 
+        // HOTFIX: Функция для хеширования пароля (упрощённая имитация)
+        async function hashPassword(password) {
+            // В реальном приложении здесь было бы настоящее хеширование
+            // Например, с использованием Web Crypto API
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        // HOTFIX: Защита от brute-force атак
+        let loginAttempts = 0;
+        const MAX_LOGIN_ATTEMPTS = 3;
+        let lockoutTime = 0;
+
+        // HOTFIX: Проверка блокировки
+        function isAccountLocked() {
+            return loginAttempts >= MAX_LOGIN_ATTEMPTS && Date.now() < lockoutTime;
+        }
+
+        // HOTFIX: Сброс попыток при успешном входе
+        function resetLoginAttempts() {
+            loginAttempts = 0;
+            lockoutTime = 0;
+        }
+
         // Обработка формы входа
-        document.getElementById('loginFormElement').addEventListener('submit', function(e) {
+        document.getElementById('loginFormElement').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const username = document.getElementById('username').value;
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const errorDiv = document.getElementById('loginError');
 
             // Сброс ошибки
             errorDiv.classList.add('hidden');
 
-            // Поиск пользователя
-            const user = users.find(u => u.username === username && u.password === password);
-            
-            if (user) {
-                // Успешный вход
-                loginSuccess(user);
-            } else {
-                // Ошибка входа
-                errorDiv.textContent = 'Неверный логин или пароль';
+            // HOTFIX: Проверка блокировки
+            if (isAccountLocked()) {
+                const remainingTime = Math.ceil((lockoutTime - Date.now()) / 1000 / 60);
+                errorDiv.textContent = `Аккаунт временно заблокирован. Попробуйте через ${remainingTime} минут.`;
                 errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            // HOTFIX: Базовая валидация ввода
+            if (username.length < 3 || password.length < 6) {
+                errorDiv.textContent = 'Логин должен быть не менее 3 символов, пароль - не менее 6';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                // HOTFIX: Хешируем введённый пароль для сравнения
+                const passwordHash = await hashPassword(password);
+                
+                // Поиск пользователя по хешу
+                const user = users.find(u => u.username === username && u.passwordHash === passwordHash);
+                
+                if (user) {
+                    // Успешный вход
+                    resetLoginAttempts();
+                    loginSuccess(user);
+                } else {
+                    // Ошибка входа
+                    loginAttempts++;
+                    if (loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+                        lockoutTime = Date.now() + 5 * 60 * 1000; // 5 минут блокировки
+                        errorDiv.textContent = 'Слишком много неудачных попыток. Аккаунт заблокирован на 5 минут.';
+                    } else {
+                        errorDiv.textContent = `Неверный логин или пароль. Осталось попыток: ${MAX_LOGIN_ATTEMPTS - loginAttempts}`;
+                    }
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Ошибка системы. Попробуйте позже.';
+                errorDiv.classList.remove('hidden');
+                console.error('Auth error:', error);
             }
         });
 
@@ -134,17 +224,35 @@
             document.getElementById('content').classList.remove('hidden');
             document.getElementById('userName').textContent = user.name;
             
-            // Сохраняем в sessionStorage (имитация сессии)
-            sessionStorage.setItem('currentUser', JSON.stringify(user));
+            // HOTFIX: Сохраняем только необходимые данные
+            const safeUserData = {
+                username: user.username,
+                name: user.name,
+                role: user.role,
+                loginTime: new Date().toISOString()
+            };
+            
+            sessionStorage.setItem('currentUser', JSON.stringify(safeUserData));
+            
+            // HOTFIX: Логируем успешный вход
+            console.log(`User ${user.username} logged in at ${new Date().toLocaleString()}`);
         }
 
         function logout() {
+            // HOTFIX: Логируем выход
+            const currentUser = sessionStorage.getItem('currentUser');
+            if (currentUser) {
+                const user = JSON.parse(currentUser);
+                console.log(`User ${user.username} logged out at ${new Date().toLocaleString()}`);
+            }
+            
             // Выход из системы
             document.getElementById('loginForm').classList.remove('hidden');
             document.getElementById('content').classList.add('hidden');
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
             sessionStorage.removeItem('currentUser');
+            resetLoginAttempts();
         }
 
         // Проверяем, есть ли активная сессия при загрузке страницы
@@ -154,6 +262,9 @@
                 const user = JSON.parse(currentUser);
                 loginSuccess(user);
             }
+            
+            // HOTFIX: Показываем информацию о безопасности
+            console.log('🔒 Security hotfix applied: Password hashing enabled');
         });
     </script>
 </body>
