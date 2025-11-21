@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Система аутентификации</title>
+    <title>Система аутентификации v1.1</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -33,6 +33,15 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+        input:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0,123,255,0.3);
+        }
+        input.error {
+            border-color: #dc3545;
         }
         button {
             background-color: #007bff;
@@ -42,19 +51,25 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
+            transition: background-color 0.3s ease;
         }
         button:hover {
             background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
         }
         .hidden {
             display: none;
         }
         .error {
-            color: red;
+            color: #dc3545;
             margin-top: 10px;
+            font-size: 14px;
         }
         .success {
-            color: green;
+            color: #28a745;
             margin-top: 10px;
         }
         .security-warning {
@@ -65,49 +80,90 @@
             margin-top: 15px;
             font-size: 14px;
         }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .user-role {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .role-admin { background: #dc3545; color: white; }
+        .role-user { background: #007bff; color: white; }
+        .role-student { background: #28a745; color: white; }
     </style>
 </head>
 <body>
     <div class="container">
         <!-- Форма входа -->
         <div id="loginForm">
-            <h2>Вход в систему</h2>
+            <h2>Вход в систему <small style="color: #6c757d; font-size: 14px;">v1.1</small></h2>
             <div class="security-warning">
                 🔒 <strong>Обновление безопасности:</strong> Улучшена защита паролей
             </div>
             <form id="loginFormElement">
                 <div class="form-group">
                     <label for="username">Логин:</label>
-                    <input type="text" id="username" name="username" required maxlength="20">
+                    <input type="text" id="username" name="username" required maxlength="20" placeholder="Введите ваш логин">
                 </div>
                 <div class="form-group">
                     <label for="password">Пароль:</label>
-                    <input type="password" id="password" name="password" required minlength="6" maxlength="30">
+                    <input type="password" id="password" name="password" required minlength="6" maxlength="30" placeholder="Введите ваш пароль">
                 </div>
-                <button type="submit">Войти</button>
+                <button type="submit" id="loginButton">
+                    <span id="buttonText">Войти</span>
+                    <span id="buttonLoading" class="loading hidden"></span>
+                </button>
             </form>
             <div id="loginError" class="error hidden"></div>
-            <p>Тестовые данные: admin / password123</p>
+            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                <h4 style="margin-top: 0;">Тестовые пользователи:</h4>
+                <ul style="margin-bottom: 0;">
+                    <li><strong>admin</strong> / <strong>password123</strong> <span class="user-role role-admin">Админ</span></li>
+                    <li><strong>user</strong> / <strong>user123</strong> <span class="user-role role-user">Пользователь</span></li>
+                    <li><strong>student</strong> / <strong>student123</strong> <span class="user-role role-student">Студент</span></li>
+                </ul>
+            </div>
         </div>
 
         <!-- Контент после входа -->
         <div id="content" class="hidden">
-            <h2>Добро пожаловать, <span id="userName"></span>!</h2>
+            <h2>Добро пожаловать, <span id="userName"></span>! <span id="userRoleBadge"></span></h2>
             <div class="success">✅ Вы успешно вошли в систему</div>
             <div class="security-warning">
                 🔐 <strong>Безопасность улучшена:</strong> Пароли теперь защищены хешированием
             </div>
             <div class="form-group">
-                <h3>Личный кабинет</h3>
+                <h3>Личный кабинет v1.1</h3>
                 <p>Это защищённая страница. Здесь может быть ваш контент.</p>
                 <ul>
-                    <li>Профиль пользователя</li>
-                    <li>Настройки аккаунта</li>
-                    <li>История действий</li>
-                    <li><strong>Журнал безопасности</strong> (новое)</li>
+                    <li>📊 Профиль пользователя</li>
+                    <li>⚙️ Настройки аккаунта</li>
+                    <li>📈 История действий</li>
+                    <li>🔐 Журнал безопасности</li>
+                    <li>🆕 <strong>Уведомления системы</strong> (новое в v1.1)</li>
                 </ul>
+                
+                <div id="userStats" style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 5px;">
+                    <h4 style="margin-top: 0;">📈 Статистика сессии:</h4>
+                    <div id="sessionInfo"></div>
+                </div>
             </div>
-            <button onclick="logout()">Выйти</button>
+            <button onclick="logout()">🚪 Выйти из системы</button>
         </div>
     </div>
 
@@ -135,10 +191,47 @@
             }
         ];
 
-        // HOTFIX: Функция для хеширования пароля (упрощённая имитация)
+        // RELEASE FIX 1: Улучшенная обработка состояния кнопки
+        function setButtonState(loading) {
+            const button = document.getElementById('loginButton');
+            const buttonText = document.getElementById('buttonText');
+            const buttonLoading = document.getElementById('buttonLoading');
+            
+            if (loading) {
+                button.disabled = true;
+                buttonText.textContent = 'Выполняется вход...';
+                buttonLoading.classList.remove('hidden');
+            } else {
+                button.disabled = false;
+                buttonText.textContent = 'Войти';
+                buttonLoading.classList.add('hidden');
+            }
+        }
+
+        // RELEASE FIX 2: Валидация в реальном времени
+        function setupRealTimeValidation() {
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            
+            usernameInput.addEventListener('input', function() {
+                if (this.value.length < 3 && this.value.length > 0) {
+                    this.classList.add('error');
+                } else {
+                    this.classList.remove('error');
+                }
+            });
+            
+            passwordInput.addEventListener('input', function() {
+                if (this.value.length < 6 && this.value.length > 0) {
+                    this.classList.add('error');
+                } else {
+                    this.classList.remove('error');
+                }
+            });
+        }
+
+        // HOTFIX: Функция для хеширования пароля
         async function hashPassword(password) {
-            // В реальном приложении здесь было бы настоящее хеширование
-            // Например, с использованием Web Crypto API
             const encoder = new TextEncoder();
             const data = encoder.encode(password);
             const hashBuffer = await crypto.subtle.digest('SHA-256', data);
@@ -152,15 +245,25 @@
         const MAX_LOGIN_ATTEMPTS = 3;
         let lockoutTime = 0;
 
-        // HOTFIX: Проверка блокировки
         function isAccountLocked() {
             return loginAttempts >= MAX_LOGIN_ATTEMPTS && Date.now() < lockoutTime;
         }
 
-        // HOTFIX: Сброс попыток при успешном входе
         function resetLoginAttempts() {
             loginAttempts = 0;
             lockoutTime = 0;
+        }
+
+        // RELEASE FIX 3: Улучшенная обработка ошибок
+        function showError(message) {
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            
+            // Автоматическое скрытие ошибки через 5 секунд
+            setTimeout(() => {
+                errorDiv.classList.add('hidden');
+            }, 5000);
         }
 
         // Обработка формы входа
@@ -173,58 +276,70 @@
 
             // Сброс ошибки
             errorDiv.classList.add('hidden');
+            setButtonState(true);
 
             // HOTFIX: Проверка блокировки
             if (isAccountLocked()) {
                 const remainingTime = Math.ceil((lockoutTime - Date.now()) / 1000 / 60);
-                errorDiv.textContent = `Аккаунт временно заблокирован. Попробуйте через ${remainingTime} минут.`;
-                errorDiv.classList.remove('hidden');
+                showError(`⏰ Аккаунт временно заблокирован. Попробуйте через ${remainingTime} минут.`);
+                setButtonState(false);
                 return;
             }
 
-            // HOTFIX: Базовая валидация ввода
-            if (username.length < 3 || password.length < 6) {
-                errorDiv.textContent = 'Логин должен быть не менее 3 символов, пароль - не менее 6';
-                errorDiv.classList.remove('hidden');
+            // RELEASE FIX 4: Улучшенная валидация
+            if (username.length < 3) {
+                showError('❌ Логин должен содержать не менее 3 символов');
+                setButtonState(false);
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('❌ Пароль должен содержать не менее 6 символов');
+                setButtonState(false);
                 return;
             }
 
             try {
-                // HOTFIX: Хешируем введённый пароль для сравнения
                 const passwordHash = await hashPassword(password);
-                
-                // Поиск пользователя по хешу
                 const user = users.find(u => u.username === username && u.passwordHash === passwordHash);
                 
                 if (user) {
-                    // Успешный вход
                     resetLoginAttempts();
-                    loginSuccess(user);
+                    // RELEASE FIX 5: Задержка для имитации обработки
+                    setTimeout(() => {
+                        loginSuccess(user);
+                        setButtonState(false);
+                    }, 1000);
                 } else {
-                    // Ошибка входа
                     loginAttempts++;
                     if (loginAttempts >= MAX_LOGIN_ATTEMPTS) {
-                        lockoutTime = Date.now() + 5 * 60 * 1000; // 5 минут блокировки
-                        errorDiv.textContent = 'Слишком много неудачных попыток. Аккаунт заблокирован на 5 минут.';
+                        lockoutTime = Date.now() + 5 * 60 * 1000;
+                        showError('🚫 Слишком много неудачных попыток. Аккаунт заблокирован на 5 минут.');
                     } else {
-                        errorDiv.textContent = `Неверный логин или пароль. Осталось попыток: ${MAX_LOGIN_ATTEMPTS - loginAttempts}`;
+                        showError(`❌ Неверный логин или пароль. Осталось попыток: ${MAX_LOGIN_ATTEMPTS - loginAttempts}`);
                     }
-                    errorDiv.classList.remove('hidden');
+                    setButtonState(false);
                 }
             } catch (error) {
-                errorDiv.textContent = 'Ошибка системы. Попробуйте позже.';
-                errorDiv.classList.remove('hidden');
+                showError('⚠️ Ошибка системы. Попробуйте позже.');
+                setButtonState(false);
                 console.error('Auth error:', error);
             }
         });
 
+        // RELEASE FIX 6: Улучшенное отображение пользователя
         function loginSuccess(user) {
-            // Скрываем форму входа, показываем контент
             document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('content').classList.remove('hidden');
             document.getElementById('userName').textContent = user.name;
             
-            // HOTFIX: Сохраняем только необходимые данные
+            // Отображение роли пользователя
+            const roleBadge = document.getElementById('userRoleBadge');
+            roleBadge.innerHTML = `<span class="user-role role-${user.role}">${getRoleDisplayName(user.role)}</span>`;
+            
+            // RELEASE FIX 7: Информация о сессии
+            updateSessionInfo(user);
+            
             const safeUserData = {
                 username: user.username,
                 name: user.name,
@@ -233,20 +348,39 @@
             };
             
             sessionStorage.setItem('currentUser', JSON.stringify(safeUserData));
-            
-            // HOTFIX: Логируем успешный вход
             console.log(`User ${user.username} logged in at ${new Date().toLocaleString()}`);
         }
 
+        // RELEASE FIX 8: Функция для отображения роли
+        function getRoleDisplayName(role) {
+            const roles = {
+                'admin': 'Администратор',
+                'user': 'Пользователь', 
+                'student': 'Студент'
+            };
+            return roles[role] || role;
+        }
+
+        // RELEASE FIX 9: Информация о сессии
+        function updateSessionInfo(user) {
+            const sessionInfo = document.getElementById('sessionInfo');
+            const loginTime = new Date().toLocaleString();
+            
+            sessionInfo.innerHTML = `
+                <p><strong>Пользователь:</strong> ${user.username}</p>
+                <p><strong>Роль:</strong> ${getRoleDisplayName(user.role)}</p>
+                <p><strong>Время входа:</strong> ${loginTime}</p>
+                <p><strong>Статус:</strong> <span style="color: #28a745;">● Активна</span></p>
+            `;
+        }
+
         function logout() {
-            // HOTFIX: Логируем выход
             const currentUser = sessionStorage.getItem('currentUser');
             if (currentUser) {
                 const user = JSON.parse(currentUser);
                 console.log(`User ${user.username} logged out at ${new Date().toLocaleString()}`);
             }
             
-            // Выход из системы
             document.getElementById('loginForm').classList.remove('hidden');
             document.getElementById('content').classList.add('hidden');
             document.getElementById('username').value = '';
@@ -255,16 +389,19 @@
             resetLoginAttempts();
         }
 
-        // Проверяем, есть ли активная сессия при загрузке страницы
+        // Инициализация при загрузке
         window.addEventListener('load', function() {
+            // RELEASE FIX 10: Настройка валидации в реальном времени
+            setupRealTimeValidation();
+            
             const currentUser = sessionStorage.getItem('currentUser');
             if (currentUser) {
                 const user = JSON.parse(currentUser);
                 loginSuccess(user);
             }
             
-            // HOTFIX: Показываем информацию о безопасности
-            console.log('🔒 Security hotfix applied: Password hashing enabled');
+            console.log('Security hotfix applied: Password hashing enabled');
+            console.log('Release v1.1: UX improvements and bug fixes applied');
         });
     </script>
 </body>
