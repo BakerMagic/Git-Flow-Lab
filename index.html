@@ -1,11 +1,160 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Git FLow Lab</title>
+    <title>Система аутентификации</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .hidden {
+            display: none;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Hellow, World!</h1>
+    <div class="container">
+        <!-- Форма входа -->
+        <div id="loginForm">
+            <h2>Вход в систему</h2>
+            <form id="loginFormElement">
+                <div class="form-group">
+                    <label for="username">Логин:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Пароль:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit">Войти</button>
+            </form>
+            <div id="loginError" class="error hidden"></div>
+            <p>Тестовые данные: admin / password123</p>
+        </div>
+
+        <!-- Контент после входа -->
+        <div id="content" class="hidden">
+            <h2>Добро пожаловать, <span id="userName"></span>!</h2>
+            <div class="success">Вы успешно вошли в систему</div>
+            <div class="form-group">
+                <h3>Личный кабинет</h3>
+                <p>Это защищённая страница. Здесь может быть ваш контент.</p>
+                <ul>
+                    <li>Профиль пользователя</li>
+                    <li>Настройки аккаунта</li>
+                    <li>История действий</li>
+                </ul>
+            </div>
+            <button onclick="logout()">Выйти</button>
+        </div>
+    </div>
+
+    <script>
+        // Тестовые пользователи (в реальном приложении это было бы на сервере)
+        const users = [
+            { username: 'admin', password: 'password123', name: 'Администратор' },
+            { username: 'user', password: 'user123', name: 'Обычный пользователь' },
+            { username: 'student', password: 'student123', name: 'Студент' }
+        ];
+
+        // Обработка формы входа
+        document.getElementById('loginFormElement').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+
+            // Сброс ошибки
+            errorDiv.classList.add('hidden');
+
+            // Поиск пользователя
+            const user = users.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                // Успешный вход
+                loginSuccess(user);
+            } else {
+                // Ошибка входа
+                errorDiv.textContent = 'Неверный логин или пароль';
+                errorDiv.classList.remove('hidden');
+            }
+        });
+
+        function loginSuccess(user) {
+            // Скрываем форму входа, показываем контент
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('content').classList.remove('hidden');
+            document.getElementById('userName').textContent = user.name;
+            
+            // Сохраняем в sessionStorage (имитация сессии)
+            sessionStorage.setItem('currentUser', JSON.stringify(user));
+        }
+
+        function logout() {
+            // Выход из системы
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('content').classList.add('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            sessionStorage.removeItem('currentUser');
+        }
+
+        // Проверяем, есть ли активная сессия при загрузке страницы
+        window.addEventListener('load', function() {
+            const currentUser = sessionStorage.getItem('currentUser');
+            if (currentUser) {
+                const user = JSON.parse(currentUser);
+                loginSuccess(user);
+            }
+        });
+    </script>
 </body>
 </html>
